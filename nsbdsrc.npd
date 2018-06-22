@@ -1,0 +1,52 @@
+# this is not a good example of a clean .npd file
+# it has some strange formatting in it to test some obscure cases
+# also note - this is not enough to completely build the nsbdsrc.nsb files
+#  that I distribute; I add some more keys from a shell script that's only
+#  in the wwexptools nsbd package
+nsbPackageDescription: 1
+package: nsbdsrc
+# a blank line
+
+summary: source code for NSBD
+description:
+  Source code for NSBD, "Not-So-Bad Distribution".
+      # another blank line, comment differently indented
+
+  Open WWW-based Authenticating Software Distribution.
+maintainers:
+    Dave Dykstra <dwd@bell-labs.com>
+	pgpKeyUrl: http://www.bell-labs.com/project/wwexptools/keys/dwd.txt
+    Lucent Central Exptools Administrator <exptools@lucent.com>
+	pgpKeyUrl: http://www.bell-labs.com/project/wwexptools/keys/exptools.txt
+#wait until packages actually exist for these
+#requiredPackages:
+#    gnupg
+#	minVersion: 1.0.6
+#    tcl
+#	minVersion: 8.0
+#    tk
+#	minVersion: 8.0
+nsbUrl: http://www.bell-labs.com/project/nsbd/%P.nsb
+topUrl: http://www.bell-labs.com/project/nsbd/source
+regSubs:
+    # add nsbd/ prefix to every filename
+    ^ nsbd/
+validPaths: nsbd/
+paths:
+    nsbdsrc.npd
+    README
+    COPYING
+    ChangeLog
+    unix/configure.in
+    unix/configure
+    unix/Makefile.in
+    unix/install-sh
+    unix/*.awk
+    unix/*.tcl
+    unix/breloc.c
+    unix/breloc.1
+    unix/nsbdInit.c
+    unix/mktclapp.c
+    unix/nsbd.npd
+    generic/
+    cgi/

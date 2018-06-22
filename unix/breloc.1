@@ -1,0 +1,98 @@
+.TH BRELOC 1 ""
+.SH NAME
+breloc - binary relocate
+.SH SYNOPSIS
+breloc [-rcv] frompath=topath [file ...]
+.SH DESCRIPTION
+.PP
+.I breloc
+replaces all occurrences of the string "frompath" in the "file(s)" (which
+defaults to stdin) with the string "topath".  If "topath" is longer than
+"frompath" then there must be at least as many extra slashes in or after
+"frompath" in the file as the difference in length between them (plus one
+more after "topath" if it doesn't end in slash, to ensure separation between
+directory components); on the other hand, if "topath" is shorter than
+"frompath" then padding slashes will be added to make up the difference.
+.PP
+Thus in general if a binary package is built with a configure "\-\-prefix"
+with a lot of extra slashes,
+.I breloc
+can be used to relocate the package to an arbitrary location.  In order to
+be most effective, the extra slashes should be at the end of the prefix,
+and there should be enough of them to allow the user freedom in the choice
+of a new path;  a total of 64 bytes for the real prefix plus the extra
+slashes is suggested for maximum flexibility.
+.PP
+.SH OPTIONS
+The -r (reversible) option restricts replacements to those that can be
+precisely reversed if 
+.I breloc
+is later applied with "frompath" and "topath" reversed.  Specifically, '-r'
+requires that the extra slashes must be after the "frompath" in the file
+only, not within it.  '-r' also requires at least one slash after the
+"frompath" in the file unless both "frompath" and "topath" already end in a
+slash or are the same length.
+.PP
+The -c (collapse) option collapses the multiple slashes in a replaced path
+into a single slash.  If a file contains no null bytes before a
+"frompath", it is assumed to be a text file and the file shrinks.  If a
+file does have a null byte before a "frompath", it is assumed to be like a
+C program binary with null-terminated strings, and the rest of the replaced
+strings up to the null terminators are shifted left and the extra space is
+padded with a string of slashes.  This replacement cannot be reversed.
+.PP
+The -v (verbose) option prints the number of "frompath"s that were replaced
+to stderr.
+.PP
+The -s (safe) causes an error to reported if it's not possible to do
+all the requested substitutions due to lack of padding slashes.  The 
+default (without -s) is to perform substititions where posssible and leave
+the others intact.  If files are specified on the command line and it's
+not possible to do all the requested substititutions, an error is reported
+and the file is not changed.  If the program is reading from stdin, 
+the entire file will be processed with substitutions made only where
+possible, but an error is returned only when -s is specified.
+.PP
+.SH EXIT STATUS
+If there are no errors,
+.I breloc
+returns an exit status of 0.  If there are I/O errors or there are not enough
+padding slashes when relocating from a shorter "frompath" to a longer "topath",
+.I breloc
+prints an error message and returns a >0 exit status.
+.PP
+.SH EXAMPLES
+To change every occurrence of "/usr/local" in "file1" to "/home/me//":
+.PP
+.nf
+    breloc /usr/local=/home/me file1
+.fi
+.PP
+To instead put the output in "file2" and to relocate to a longer path
+(assuming there are enough extra slashes after every "/usr/local" inside
+"file1") and show number of replaced strings to stderr:
+.PP
+.nf
+    breloc -v /usr/local=/home/mylogin/local <file1 >file2
+.fi
+.PP
+If "file1" was built with a prefix of "/usr/local/////" and had "bin/" and
+"etc/" subdirectories compiled in, to relocate the subdirectories separately
+the following will work:
+.PP
+.nf
+    breloc /usr/local/bin=/home/mylogin/bin <file1 | \\
+	breloc /usr/local/etc=/home/mylogin/sbin >file2
+.fi
+.PP
+Adding a "-r" option in the above example causes 
+.I breloc
+to skip doing the replacement because it requires the extra slashes to
+be after "/usr/local/bin"; otherwise, the operation could not be exactly
+reversed because a subsequent
+.I breloc
+couldn't know that it needed to put the extra slashes before "bin".
+
+.PP
+.SH SEE ALSO
+.IR nsbd (1)

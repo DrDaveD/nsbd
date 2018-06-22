@@ -1,0 +1,35 @@
+			=======================
+			Not-So-Bad Distribution
+			=======================
+
+This is the source release of Not-So-Bad Distribution, an Open WWW-based
+Authenticating Software Distribution system.  This is free software, released
+under the terms of the GNU General Public License; see the COPYING file for
+details.  The home page of NSBD is
+    http://www.bell-labs.com/nsbd
+Up-to-date NSBD binary packages are available on multiple Unix platforms,
+so check the web page first to see if your platform is supported before
+compiling it.
+
+NSBD is written primarily in TCL, and you need a TCL8.0 installation or
+later to compile it.  You will also need at least "tcl2c" from the TCL
+"plus patch", and you will need the entire TCL plus patch if you want to
+build a standalone NSBD binary that can run on a system that does not have
+TCL installed.  If you also have TK and you have not specified the
+--without-tk configure option, TK will be used (without TK you lose the
+nsbd -register option); if you want to build a standalone nsbd binary, you
+will also need the TK plus patch.  Links to all these packages are on the
+NSBD home page.
+
+To compile NSBD on unix, go to the "unix" directory and type "configure"
+and "make install".  All the standard GNU autoconf "configure" options
+should work, but the only standard option that has been tested is
+"--prefix" for the directory prefix to install into.  The NSBD binary is
+relocatable since it is completely self-contained, but some scripts that
+are useful to package maintainers are installed into a lib directory.
+
+To use NSBD with any kind of security, you will also need PGP or GnuPG.
+
+Most of the documentation is on the home page and in the man page.  The
+same information that's available in the man page is available in the
+builtin help system in the nsbd program.

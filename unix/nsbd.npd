@@ -1,0 +1,32 @@
+# note - this is not enough to completely build the nsbd.nsb files
+#  that I distribute; I add some more keys from a shell script (not included)
+nsbPackageDescription: 1
+package: nsbd
+summary: NSBD, Not-So-Bad Distribution
+description:
+    Executables for NSBD, "Not-So-Bad Distribution".
+    Open WWW-based Authenticating Software Distribution.
+maintainers:
+    Dave Dykstra <dwd@bell-labs.com>
+	pgpKeyUrl: http://www.bell-labs.com/project/wwexptools/keys/dwd.txt
+    Lucent Central Exptools Administrator <exptools@lucent.com>
+	pgpKeyUrl: http://www.bell-labs.com/project/wwexptools/keys/exptools.txt
+requiredPackages:
+#    pgp
+#	minVersion: 2.6.2
+#    tcl
+#	minVersion: 7.6
+#    tk
+#	minVersion: 4.2
+nsbUrl: http://www.bell-labs.com/project/nsbd/%P.nsb
+topUrl: http://www.bell-labs.com/project/nsbd/binaries
+localTop: .
+regSubs:
+    # delete all .%E suffixes when installing
+    \.%E$
+paths:
+    bin/breloc%X
+    bin/nsbd%X
+    lib/nsbd/
+    man/man1/breloc.1
+    man/man1/nsbd.1

@@ -1,0 +1,1403 @@
+1997/06/19
+    First internet release, version 1.0b3.
+1997/06/20
+    Change nsbdsrc package to have "nsbd/" prefix.
+    Change -fetchAll to not apply any local config or registry substitutions.
+1997/07/16
+    When looking for previously installed '.nsb' files, honor executableTypes
+      set on the command line.
+1997/08/19
+    Support % substitutions in topUrl and multigetUrl.
+    Re-organized installations of multiple executableTypes that go into
+	separate installTops so that files for all types will be fetched
+	together, installed together, and have '.nsb' files installed together.
+	No step will occur until the previous step succeeds completely.
+1997/08/20
+    Added -changedPaths and -batchUpdate options.
+    Read at most $CONTENT_LENGTH bytes if the environment variable is set
+	whenever "-" is used to read from standard input.
+    Fixed bug in -postUrl which caused multi-line POSTs to fail.
+1997/08/25
+    Added posttonsbd.sh and pushpackage.sh scripts to support direct pushing
+	of packages from maintainers to users.
+    Added postLength= command line variable for use with -postUrl to avoid
+	reading large POST operations into memory, and added corresponding
+	-querychannel and -querylength options to http_get.
+1997/08/26
+    Changed -batchUpdate so it doesn't save all of the updates from standard
+	input to a temporary file.
+    Improved reports about changes to keys that may be maintainerUpdatableKeys 
+	to only show additions or removals of items in a list.  For keys
+	that *could* be mantainerUpdatableKeys but aren't, compare against
+	values in both the registry database and those saved in any previous
+	'.nsb' files.
+1997/08/28
+    Fixed bug in the building of a '.nsb' from a '.npd' file to make sure
+	that files of all executableTypes exist when %E substitutions are
+	requested.
+    If any paths are missing when building a '.nsb' from a '.npd', now
+	prompts the user to ask whether or not to continue without them.
+    Print no warnings when creating a '.nsb' file and nsbUrl, topUrl, and
+	multigetUrl are all missing, because none of them are needed for
+	-batchUpdate.
+    Fixed bug with missing nupContents variables when there are no paths.
+1997/09/04
+    Moved the turning off blocking on the http socket until after a POST
+	operation is done, to avoid buffering the data.
+    Put in percent-done progress messages on url fetches and -postUrl.
+1997/09/05
+    Added verbose levels 4 and 6 for no percent-done messages and more
+	percent-done messages respectively, and changed the default logLevel
+	to 3 and the default verbose level to 5.
+    Changed -notifyOnly to -pushOnly in pushpackage.sh.
+1997/09/08
+    Fixed multiget.sh to work properly on sunos 4.
+1997/09/22
+    Port to tcl8.0/tk8.0.  Had to put in a workaround in http.tcl to get
+	around a bug in tcl8.0 with fconfigure $s -translation {auto binary}.
+	There was also a bug in tkConfig.sh's TK_LIB_SPEC for which I did
+	not create a workaround but instead I sent in a patch to Sun; this
+	only affects some platforms when building with shared libraries.
+	Also have to use fcopy instead of unsupported0.
+1997/09/23
+    Also use fcopy in the support CGI script multiget.tcl.
+    Added -changedPaths option to pushpackage.sh.
+1997/09/26
+    Allow directories to be duplicated after substitutions when installing.
+    Fix bug introduced 1997/08/19 which assumed that nonportable files
+	in different executable types would always be loaded together.
+	That's not necessarily the case if different lists of executable
+	types are used on different update operations.
+    Changed release number to 1.0, the first non-beta release.
+1997/10/03
+    Fixed bug in trimOldLog with trying to get the first two columns of
+	a log file line using "lrange"; the problem is that the text line
+	may not be a well-formed tcl list, for example containing double
+	quotes followed by a colon.  Use regexp instead.
+1997/10/10
+    Fixed bug in urlMultiMdCopyHandler which had a "gets" that ignored the
+	fact that the socket is in "-blocking off" mode, which means that
+	gets might return -1 if a complete line is not available.
+    Also discovered a bug in the plus patches which adds TCL_FILE_EVENTS
+	to the list of events that are handled when "update idletasks" is
+	called.  This causes errors when loading files with -register
+	because file event handlers get nested.   To workaround the bug,
+	moved the progress messages to be called just before returning
+	from the urlMultiMdCopyHandler so it shouldn't hurt if they
+	get nested.
+1997/10/13
+    Apply local substitutions to validPaths that are explicitly specified
+	in a '.npd'/'.nsb' file.
+1997/10/14
+    Changed proxy specifications to allow a "/" at the end.
+    Merged http.tcl with the http1.0 that came with the base tcl8.0 release.
+	I noticed that this solved a problem that started when I upgraded
+	to tcl8.0, because of a difference in operation between "unsupported0"
+	and "fcopy": by default, fcopy will always block until its entire
+	-size bytes are received, unless you use the -command option.  As a
+	result, operations like nsbd -getUrl would not display results from
+	a CGI script as they were happening; the new http.tcl does the
+	fcopy with -command.
+    Skip all maintainerUpdatableKey processing for keys set on the command
+	line; that is, don't update the database (if it is maintainerUpdatable)
+	and don't warn about changes (if it is non-maintainerUpdatable).
+    In all cases where a '.nsb' file is allowed to be a local filename or
+	a URL, also accept a URL specification of file:// because it doesn't
+	hurt and may be more intuitive if someone is thinking in terms of
+	a URL.
+    If topUrl is set on the command line when installing a package and the
+	URL is of the form file://, copy files locally instead of fetching
+	over the network.  This is useful for re-"distributing" a package
+	from one place to another on the same machine.  This is only
+	documented under the "-update" option because I can't figure out
+	where else it fits; it certainly doesn't belong in the description
+	of "topUrl" inside the '.nsb' or '.npd' files.
+    When installing packages, allow parent directories of registered validPaths
+	to be included in the '.nsb' files, for the convenience of maintainers
+	who may want to include a parent directory because it's simpler
+	than explicitly listing subdirectories.
+1997/10/15
+    Don't warn about updates to non-maintainerUpdatableKeys when doing an
+	update via "push" (that is, -batchUpdate).  Those warnings are really
+	for "users" anyway, not the maintainers who are doing the pushing.
+    Added config keyword 'createMask' which sets the unix file creation
+	umask.  Since '.nsb' files don't contain the full unix permissions
+	of user, group, and other, but just has "rwx", I decided it was
+	important to control the umask and not rely on the default.  Default
+	createMask is 022.
+    Support hardlinks within packages via a new '.nsb' file keyword called
+	"hardLinkTo".  For now, also include the length and message data
+	info on files that are hardlinked, for compatibility with older
+	versions of nsbd.  Those can be removed after enough time has
+	elapsed (say around the beginning of 1998) for older versions of
+	nsbd to be replaced.
+    Fixed bug in "-preview" where it was not reporting files that would
+	be deleted.
+    Changed the name of the "nsbdcatch" function to "notrace".
+1997/10/20
+    Added -unsigned option to lib/nsbd/pushpackage.sh.
+    Small documentation improvements.
+1997/10/31
+    If executableTypes is missing from a '.nsb' file but installTop
+	contains a %E, substitute all registered executableTypes because
+	the package is portable.
+1997/11/07
+    Added pathModes '.npd' file keyword, to be able to override the 
+	file permission modes (rwx) that exist on the original files when
+	installing.  This is a convenience for package maintainers.
+1997/11/17
+    In pushpackage.sh, if package is not specified and exactly one '*.npd'
+	exists in the currect directory, use it.
+1997/11/24
+    Recompile with tcl8.0p1+.
+1997/11/26
+    Added printing out of Tcl patchlevel at same time as nsbd version.
+    Fixed problem in getExecutableTypes that caused rejection of new
+	packages if they only contained executableTypes that were not
+	listed in the configuration file's executableTypes.  Changed it
+	to a warning instead of an error.
+1997/12/02
+    Always expand tildes on sym links and hard links; this is done
+	automatically on tcl "file" commands but sym links and hard links
+	are not supported by "file" so I had added my own interfaces
+	to the Unix system calls.
+    Expand comment on 'pgp' config variable to say that +language=en should
+	be added if English is not the default language.
+1997/12/04
+    Added 'pathPerms' registry database keyword to give more control to
+	the user over what file permissions are used for installed files
+	or directories, including the ability to have setuid/setgid bits
+	turned on.
+    Recompiled with tcl8.0p2+.
+1997/12/11
+    Added proxyAuthorization config variable for support of username and
+	password authorizations of proxies.  Thanks to Simon King for the
+	suggestion and some of the code.
+    Added SIGPIPE to the list of signals that can be caught for cleanup;
+	this can happen if doing a -getUrl and piping into a command that
+	doesn't read all it's input (like "head").
+    Merged in small change from tcl8.0p1's http1.0/http.tcl for getting an
+	error message as the third parameter to httpCopyDone.
+    Wrapped all calls to http_wait in url.tcl with "notrace" to avoid 
+	printing stack dump if there's an error in a http transaction.
+1997/12/12
+    Change replay-attack-prevention timechecks to compare the generatedAt
+	keyword in the '.nsb' files rather than the times on the PGP
+	signatures.  This avoids having to run PGP for each saved '.nsb'
+	file, which can take considerable time.  Thanks to Tom Limoncelli
+	for the inspiration.
+1998/01/06
+    Made the prompts that come up the first time NSBD is run, for pgp and the
+	.mailcap entry, a little friendlier.
+1998/01/09
+    Made the default Content-Type be application/octet-stream when POSTing
+	using the -querychannel option I had added to http.tcl.  This resolves
+	a problem I had when using the Lucent Personal Web Anonymizer as
+	a proxy, because it was trying to interpret the posted data as
+	application/x-www-form-urlencoded data since that used to be the
+	default Content-Type for all POST operations.
+    Add "Pragma: no-cache" to the header for all http operations.  This
+	requests that proxies always confirm that they will be returning
+	the latest copy of all objects.  This may be done better in HTTP/1.1;
+	a comment in the source explains the details.
+1998/01/12
+    Allow the config file's 'executableTypes' to contain some types that
+	are not used by only using those for which the installTop directories
+	exist, if the installTop contained a %E substitution.  The reason
+	for this is to avoid a subtle problem with having a package that
+	contains files with executableTypes that are not desired (because
+	they're old types), while still allowing the maintainer the power
+	to limit the types that are updated at a time if he desires.  If
+	this is not done, any files that are of an executableType that is
+	not specified anywhere are considered to be portable files and
+	installed anyway.  With this change, the user's config file can
+	specify all known current and former types without requiring the
+	maintainer's '.nsb' file to list them all.  This was needed for
+	Exptools installation in Lucent.
+    At the same time, require that all installTop directories be pre-existing
+	before they are used.  The main impetus for doing this is to avoid
+	confusion as to when the installTop's existence makes a difference,
+	but it's probably a good idea anyway to catch errors of accidentally
+	mis-specified installTops.  This may be annoying to some users, though.
+    Also, added a "Try Again" for any errors that may occur during an
+	"Install and register" operation under -register.  This is
+	something I wanted to do anyway, and it should ease some annoyance
+	at this new requirement of pre-existing installTops.
+    Added a new '-preview' option to pushpackage.sh (also supported by 
+	posttonsbd.sh) to allow maintainers who are using "push" mode to
+	check what would be installed before actually installing anything.
+	Removed the '-changedPaths' option because '-preview' is more
+	useful and I didn't want the confusion of having two options.
+    Print warnings when unrecognized keywords are found in .npd, .ncf, and
+	.nrd files but not in .nsb files.
+1998/01/16
+    Fixed bug in "-update all" that caused the message "Internal Error: must
+	commit updates before changing packages".  The problem was caused
+	because packages were being marked as needing an update to the
+	registry database even though "nrdUpdate" didn't change anything.
+1998/01/20
+    Changed execution of the postUpdateCommands so they will be executed
+	even if no files were updated.
+1998/01/21
+    Fixed URL in example for manually registering for nsbd updates (the
+	"project" had been left out).
+    Extended the message about changing non-maintainerUpdatableKeys to
+	say "attempting to continue anyway" to make it clear that it did
+	not make any changes.
+1998/01/29
+    Changed postUpdateCommands and preUpdateCommands to print results one
+	line at a time instead of waiting for the whole command to finish
+	before printing anything.
+    Check to make sure a directory is writable before attempting to create
+	a lock in it, in particular for the registry.nrd file.
+1998/02/03
+    Added updateParameters to '.npd' and '.nsb' files.  This is a list that
+	is simply written out to the 'nup' file that preUpdateCommands and
+	postUpdateCommands see, to be defined by those commands.
+1998/02/04
+    Changed the "stopat" function in cgi/pushpackage.sh to workaround a bug in
+	ksh93d, at least on IRIX.
+    Fixed obscure problem with comparison to saved '.nsb' files when
+	multiple versions are installed: normally, on -poll, -update, and
+	-preview, new .nsb files are compared to saved .nsb files and if
+	they are identical (on the first executableType if there are
+	multiple executableTypes) processing is immediately stopped.  When
+	multiple versions were saved because the nsbStorePath included %V,
+	it kept comparing to the old '.nsb' file instead of the latest and
+	wouldn't detect that there was no change.  Now it will try all
+	versions stored for the first executableType. 
+    Changed "Processing" messages so '.nsb' and '.npd' files are always
+	"progress" messages (level 4) and other type files are always
+	"debug" (level 7).  It used to be that other type files were
+	also level 4 when on the command line; this allows silently adding
+	'.ncf' and '.nrd' files on a command line.
+1998/02/12
+    Changed introductory help text to include the notion that NSBD is 
+	especially well suited for the distribution of free software, where
+	the user doesn't entirely trust the provider.
+1998/02/27
+    Added a feature to preUpdateCommands and postUpdateCommands: if they
+	begin with the special character '@', the output will not be
+	logged or processed by nsbd at all.  Normally the output is
+	an update (level 3) log message.
+    Added --without-tk configure option to build nsbd without TK and
+	therefore without the nsbd -register option.  Also, if tkConfig.sh
+	is not found in the $tcl_prefix/lib directory, assumes --without-tk.
+    When doing a -getUrl or -postUrl, make sure the tcl translation on stdout
+	is binary (the default on Unix is "lf" which is for all practical
+	purposes the same as binary, but it will affect PC and Mac someday,
+	and I'm not sure about the default on Unix when stdout is connected
+	to a socket).
+    Change the Content-Type in posttonsbd.sh to application/octet-stream
+	instead of text/plain, to prevent web servers from trying to do
+	carriage-return <=> linefeed translations.
+1998/03/04
+    Added 'windex' (word index) and 'wrange' (word range) functions in
+	util.tcl for use in parsing strings, and replaced some inappropriate
+	usages of lindex and lrange in pgp.tcl and nsbdformat.tcl.  These
+	functions "split" a string on whitespace before using lindex and
+	lrange.  This avoids errors that can occur if a string doesn't
+	happen to be a well-formed list.
+    Changed all "\007" in pgp.tcl to "\a" because of a bug in the UTS
+	ansi C compiler.
+    Fixed bug that prevented zero-length files from being Multi-fetched.
+1998/03/06
+    Changed the -pushOnly option in the pushpackage.sh CGI script to
+	-skipPrepare.
+    Fixed pushpackage.sh to look for a "localTop=" on the command line,
+	which overrides a "localTop:" keyword in the '.npd' file.
+    Added explicit check for a directory when looking to open an NSBD-format
+	file in "procfile", because tcl allows "open"ing a directory but
+	then it gives a confusing message about doing an illegal operation
+	on a directory.
+    Fixed a bug that caused symbolic links that point nowhere to not be
+	removed when they were deleted from a package.
+1998/03/11
+    When doing a -batchUpdate (that is, a pushpackage), check if there has
+	been any change to the '.nsb' file just before saving it, and don't
+	write it if there has been no change.  For -poll, -update, and
+	-preview this check is performed much earlier, but I needed to have
+	-batchUpdate still go through all the processing.  It also turns
+	out that I need to not have the '.nsb' file written if there is no
+	change, because I have cases where I want to have several done in
+	parallel and they were interfering with each other; thus this new
+	check.
+1998/03/18
+    Changed '@' on preUpdateCommands and postUpdateCommands to not log the
+	fact that it is running a command at all, in addition to not logging
+	the output from the command.
+1998/03/26
+    Print out the magic words "Batch update succeeded" at the end of a
+	successful -batchUpdate (that is, for "push" mode), and return an
+	error from pushpackage.sh if those words are not found.  This is
+	needed because otherwise there is no way to get failure information
+	back from pushpackage.sh, since all it is doing is a "-postUrl"
+	operation to the remote "-batchUpdate" which always returns a 
+	successful exit code as long as there are no communication failures.
+1998/04/20
+    Added pathPerms as a config file keyword.  Hint: if a user wants to
+	completely control read/write permissions on files and directories,
+	combine a global pathPerms of "* +NNN" with a createMask of NNN's
+	complement, not including the execute bits.  For example, to be
+	read/writable by owner and readable by group and other, use a global
+	pathPerms of "* +644" and a createMask of 022.  That leaves only
+	execute permission to the discretion of the maintainer.
+    Added printing of file mode when creating directories or files.
+    Changed warning message of unknown keywords to print out filename instead
+	of fileType.
+    Added an override option to nsbdParseContents to allow keywords in the
+	config file to be applied immediately when parsing, so that if the
+	logFile is set in the config file before an unrecognized keyword,
+	the warning will go to the chosen logFile and not the default
+	name.  (Before, the config keywords went into a temporary array and
+	were applied on top of the cfgContents with applyKeys).
+1998/04/22
+    Changed initial text in the operation description to put more focus
+	on how NSBD is designed for free software on the internet.
+1998/04/23
+    Honor executableTypes= or version= on command line when fetching a nsbUrl
+        that contains a %E or %V.
+1998/04/24
+    If config file and registry files can't be found, only attempt to create
+	them if stdin is a terminal; otherwise, print a warning message and
+	continue.
+    Removed cgi/nsbdupdate.c; it was superceded by "push" mode.
+1998/04/28
+    Added -multigetFiles and -multigetPackage options.  -multigetFiles is a
+	replacement for the supplied multiget.sh and multiget.tcl CGI scripts,
+	and -multigetPackage enables re-distribution of installed packages.
+    Fix bug in the application of %E and %V to topUrl and multigetUrl.
+1998/04/30
+    Added ability to keep read-only separately-maintained registry database
+	files in addition to the primary read-write file.  In support of that,
+	added configuration keyword "registryFiles" to supply a list of
+	registry database files.  The default is $nsbdpath/registry.nrd.
+	All but the last one in the list are read-only, and the last one is
+	read-write.  Keywords duplicated in later files in the list are
+	ignored, except the "packages" list which is merged.
+    Added a corresponding "configFiles" keyword for a list of configuration
+	files.  Keywords duplicated in later files in the list are ignored,
+	except for more "configFiles" keywords.
+    Removed processing of configuration files and registry database files
+	directly on the command line (instead can use "configFiles" and/or
+	"registryFiles" keywords on the command line).
+    Removed the "override" parameter to nsbdParseContents that was added
+	on 04/20 and instead changed the specification of all "nsbd format"
+	files to ignore all duplicate keywords (it used to only ignore
+	duplicate non-list keywords, and append to duplicate list keywords).
+    Keep registered package names sorted internally and when writing out so
+        duplicates can be easily skipped.
+1998/05/04
+    Removed required variable $MULTIGET from pushpackage.sh and instead use
+	$NSBD -multigetFiles.
+    Treat an empty CONTENT_LENGTH environment variable wherever it is used the
+	same as if CONTENT_LENGTH were not set.
+    Changed version number to 1.1.
+1998/05/05
+    Fixed bug that caused '-multigetFiles "$QUERY_STRING"' to fail when
+	QUERY_STRING was empty.
+    Disable logging of any error messages to a log file with -multigetFiles,
+        because the config file is not read with that option.
+1998/05/06
+    Fixed problem in pushpackage.sh that prevented error messages from
+	nsbd -multigetFiles while calculating the update length from being
+	displayed.
+1998/05/12
+    Changed pushpackage.sh to use /bin/sh instead of just sh.
+1998/05/14
+    Look for and print any X-Multiget-Error keywords there may be in the http
+	header when receiving a multiget; previously it was only looking
+	for it in the body, after the http header.
+    Let an installTop= on the command line override an installTop set in
+	the registry database; previously it only set the configuration
+	value, which was lower priority than an entry in the registry database.
+    Fix the getCmdkey function to return "" when a variable is not set on the
+	command line rather than bombing.
+1998/05/18
+    If "validPaths" is not maintainerUpdatableKey (that is, the user controls
+	it in the registry database), only warn about about an addition to it
+	if it doesn't match wildcards in the registry database.  This avoids
+	needless warnings that can occur when maintainers don't pay any
+	attention to validPaths; in that case, nsbd automatically calculates
+	validPaths based on the paths in the package, and nsbd used to often
+	print warnings when a maintainer added a new file even though it was
+	covered by wildcards that the user had manually put in validPaths in
+	the registry database.
+1998/05/19
+    Return a non-zero exit code if any of the packages polled with -poll
+	had an error.
+    Don't let an "executableTypes" keyword setting on the command line
+        override the configuration file contents internally, because need to
+	be able to be aware of as many executableTypes as possible when
+	reading in a package so unwanted types can be eliminated.
+1998/06/02
+    Allow for blanks in command line keyword settings in pushpackage.sh by
+	double-quoting the args and then using eval when referencing $NSBDOPTS.
+1998/06/17
+    Put a "notrace" around the regsub that gets done for the "regSubs" keyword
+	so if there's a user error it won't cause a backtrace.
+1998/07/20
+    Fix setting of installTop= on command line to work with relative paths.
+	This was broken in the 1998/05/14 change.
+    Changed the "No change in .nsb file" messages from update level (that
+	is verbose/logLevel 3) to progress level (verbose/logLevel 4).
+    Make sure package is registered with -update option (before it was only
+	checking that an nsbUrl was available, which may have been the case
+	for non-registered packages if nsbUrl was set on the command line).
+    Make -update option continue on with other packages on the command line
+	if there are errors updating any particular package, unless the
+	error was not caught with "notrace".  This is the same as was
+	previously supposed to be the case with -poll, but that had been
+	broken for quite a while.  Also, changed the exit code on both
+	-update and -poll to be the number of packages that had errors.
+    Changed the places that used to call option-update to call procnsbpackage
+	directly, and removed the second nsbType parameter to option-update.
+1998/07/21
+    Changed urlCopy to always read URLs in binary mode.  Without this, I was
+	getting length mismatches when doing a -update on '.nsb' files that
+	were signed by PGP on a PC (that is, with embedded carriage returns).
+1998/07/30
+    Fixed bug in that prevented removing directories.  Directories are
+	supposed to be removed if they are included in the '.nsb' file of
+	a package and later are not included, and if they are empty
+	at the time.
+    Added full stack trace on verbose=7 even if it was an "notrace" error.
+    Added -remove and -unregister options.
+1998/08/04
+    Do post processing (that is preUpdateCommands and postUpdateCommands)
+	for all update types even if the '.nsb' file hasn't changed.  It
+	used to be that -poll and -update wouldn't do them.
+    Include all update types in the early check for '.nsb' files that haven't
+	changed, to improve performance.  It used to be that -changedPaths
+	and -batchUpdate were not included.
+1998/08/07
+    The change to urlCopy on 1998/07/21 caused copies to be completely buffered
+	because tcl's fcopy does buffering unless you use -command option
+	(I should have remembered that, it was noted on 1997/10/14).  Fixed
+	that by using read & puts instead (which works with binary data in
+	tcl 8.0).  I also note that I could have instead solved the problem
+	of mismatched lengths on '.nsb' files by changing the Content-type
+	of the '.nsb' files on the server side to not be "text/something";
+	I may want to do that and go back to using http_get's -channel
+	option for urlCopy.
+1998/08/10
+    Remove version from the registry database when removing a package.
+1998/08/28
+    Added "&" to the list of URL characters that don't get translated into %NN.
+1998/09/08
+    Added the "distributedPackageName" nrd keyword to enable users to register
+	packages under a different name than the one that the maintainer chose.
+	Have not yet added a GUI interface to this in -register; it is only
+	available when registering a package by hand.
+    Expand tildes in the pgppath because PGP doesn't do it.
+1998/09/09
+    Changed '@' on preUpdateCommands and postUpdateCommands to send all stderr
+	output to stdout, because the tcl {open "!$command" w} call was
+	interpretting the stderr output as an error message and returning
+	an error code.
+    Fix a problem introduced on 1998/08/04, in which processing of the '.nsb'
+	files was completely skipped if there was no change to the file
+	even though post processing is still done.  The problem was that
+	some keywords such as "version" and "updateParameters" are only
+	really known in the '.nsb' file.  The fix was to add back the parsing
+	of the '.nsb' file before moving on to post-processing.
+    Avoid double printing of "100% done" messages at verbose levels > 5.
+1998/09/24
+    Add support for the GNU Privacy Guard (GPG).  If the "pgp" keyword is
+	set to a command ending in "gpg", it is assumed to be GPG and otherwise
+	it is assumed to be PGP 2.6.2 or 4.0.  The assumption can be overridden
+	one way or the other by setting the "pgpVariant" keyword.  At this
+	time GPG is still not stable (tested with gpg version 0.4.0) so the
+	interface will probably need to be changing to track changes to gpg.
+    Apply the regSubs/pathSubs to installTop before checking to see if it
+	exists (the check that was added 1998/01/12).
+1998/10/05
+    Allow excludePaths in '.npd' files to end in a slash; if it matches a
+	directory, exclude that directory and anything below it.
+    Added error checking in "substitutePaths" to make sure no substitutions
+	add or remove a trailing slash, which implicitly attempts to turn
+	a file into a directory or a directory into a file.
+1998/10/15
+    Added a urlPresubstitutions flag to .npd and .nsb files to indicate,
+	when set to "all", that the paths under topUrl or multigetUrl have
+	been pre-substituted (that is, pre-installed).  This avoids having
+	to use a CGI script based on "nsbd -multigetPackage" to redistribute
+	installed packages.  The "all" is intended to indicate that if the
+	user has any extra pathSubs/regSubs in their own .ncf or .nrd
+	files, then the same substitutions should have also been applied
+	where the package is getting redistributed from.  A variation to
+	apply only the substitutions from the '.nsb' files may be added in
+	the future if there is any need for it.
+1998/10/19
+    Removed generation of checksum and length information for hardlinked
+	files; that was only needed for backward compatibility to before
+	the time when the hardLinkTo subkey was introduced, which was a
+	long time ago.
+    Added the capability to do transfers via rsync servers, using a URL
+	syntax of rsync://hostname[:port]/path.  Added a 'rsync'
+	configuration keyword to specify a path to the rsync client and
+	optional parameters; default is "rsync -z".  The rsync URL is
+	supported in the 'topUrl' keyword and wherever single files are
+	referenced, such as in 'nsbUrl' and the -getUrl option.  When
+	single files are referenced, there is never any comparison to
+	existing files done, so the only advantages then are 1) compression
+	(if -z is used) and 2) convenience.  From a 'topUrl', comparisons
+	are done to installed files using a new rsync "--compare-dest"
+	option which I contributed and which is not yet officially part of
+	the rsync distribution (which is currently at release 2.1.1).
+    Changed strategy for creating parent directories when creating or
+	renaming files, thanks to an idea from the rsync source code:
+	instead of always checking to see if parent directories exist, first
+	try to do the operation and if it fails with ENOENT then make the
+	parent directories and retry the operation.  This makes for more
+	compact code (it is all encapsulated in a withParentDir function) and
+	should be more efficient on average.
+1998/10/20
+    Changed the handling of temporary package files to always save files
+	that have been retrieved under <installTmp>/<package> if there
+	was an error during retrieval, so they can be used in a subsequent
+	installation attempt.  Changed the default installTmp to be ".nsbdtmp",
+	which is appended to installTop.  Changed getNupPathsInfo function
+	to first see if the files already exist and have checksums that
+	match, and changed call to rsync to use --partial option.
+1998/10/21
+    If both an rsync topUrl and an http multigetUrl are specified in a '.nsb'
+	file, prefer the rsync if and only if the user has explicitly set
+	an 'rsync' configuration keyword.  This strategy was chosen because
+	not all users will have rsync.
+1998/10/22
+    Add a "/" to the end of rsync topUrls before calling rsync if it is
+	missing.
+1998/11/02
+    Since rsync is unable to perform substitutions on filenames, if a
+        substitution is being performed then hardlink in the real file from
+	the installTop into the temporary directory before caling rsync
+	so rsync will have something to compare to.
+1998/11/03
+    Rsync is invoked through a shell, so quote any parameters that are
+	directly passed in from the maintainer, to keep maintainers from
+	sneaking in any special shell characters to run commands on the
+	user's machine.
+1998/11/04
+    Pass rsync URLs directly to rsync since version 2.2.0 supports them.
+    Changed nsbd version number to 1.2
+1998/11/18
+    Include rsync -I option with --compare-dest for safety, because
+	otherwise if the timestamps of the source and the currently
+	installed file happen to match then rsync won't copy it.
+1998/11/19
+    Added support for PGP 5.0.  There's a new variant "pgp5" supported in
+	the $pgpVariant keyword.  The "pgp" keyword should point to the
+	"pgpv" program for pgp 5.0, and "pgpk" and "pgps" programs should
+	be in the same directory.
+    Since PGP 5.0 reports all the user ids of signatures and the key ID, take
+	advantage of that by checking for all of them in the "maintainers"
+	list.  GPG also reports the key id, so when using PGP 5.0 or GPG
+	"maintainers" may now contain the key ID in hex 0x[0-9A-F]+.
+    When invoking the shell, don't use $SHELL if it ends in "csh".
+1998/11/25
+    Dump original stack trace when there's an error logging an error message.
+1998/12/04
+    Do a better job of quoting CGI variables in linknsb.sh and multiget.sh
+	to prevent strange URLs from executing shell commands.  Those were
+	written before I knew about the dangers and I forgot to go back
+	and change those two scripts until now.
+    Added "backupSubs" keyword for registry database and config file which
+	is like "regSubs" except it specifies paths in which to save
+	backups of previously installed files.
+1998/12/08
+    Fix bug with a localTop of "/" when generating a '.nsb' file from a
+	'.npd' file.
+1998/12/16
+    When duplicating portable files into multiple distribution's installTmps,
+	use the "-force" option file copy to overwrite any that may have
+	been left from a previously aborted installation attempt.  This
+	has been a potential problem since the strategy change on 1998/10/20
+	to leave partial installations around.
+1999/01/04
+    Print a useful error message when a substitutition turns a filename path
+	into another filename path (no slash) of a previously known directory.
+1999/01/05
+    Clean up the removal of temporary files in pushpackage.sh.  Temporary
+	files were getting removed too soon in some cases, preventing useful
+	error messages from being displayed.
+1999/01/12
+    Create parent directories for log files if they don't exist.
+1999/01/15
+    The cleanup of pushpackage.sh on 1999/01/05 uncovered another bug when
+	reporting errors; was using an unquoted up-arrow (^) that was
+	being interpreted by /bin/sh as an old-style pipe character.
+1999/01/18
+    Added checkPathConflicts configuration variable to look for paths that
+	are part of more than one package.  If set to "installs", make it
+	an error to install a path that already exists in another package.
+	If set to "deletes", skip deleting files that also exist in 
+	another package.  If set to "all", the default, does both.  This
+	was motivated by a need to be able to move paths from one package
+	to another but not know the order in which the two separate packages
+	will be updated (so re-distribution will be using the "deletes"
+	variation).  Also changed the "maintainerUpdatableKeys" "validPaths"
+	option to allow validPaths to be updated as long as actual paths
+	don't conflict between two packages; validPaths (which can include
+	wildcards) themselves will be allowed to conflict.
+1999/01/19
+    Added to checkPathConflicts implementation so that when deleting files
+	it will calculate a list of "validPaths" on the files to be deleted
+	rather than using the registered validPaths, because the files to
+	be deleted may have been removed from the registry before they are
+	removed from the package itself.
+1999/01/20
+    Cleaned up the checking for trailing slashes in paths by adding a 
+	"isDirectory" utility function.
+1999/01/22
+    Added another useful error message like the one on 1999/01/04 when
+	the converse is true, that is, if a directory comes along that
+	was substituted to the same place as a previously substituted
+	file.  It depends on the order in which the file & directory
+	occurs in the "paths" list.
+1999/01/25
+    Moved per-file batched fetch messages (multiFetch and rsync) from
+	verbose level 4 to verbose level 5.  The default verbose level is 5
+	so most cases won't see a difference.
+1999/01/27
+    When a file exists in the temporary directory from previously failed
+	attempt, but the checksum doesn't match, explicitly remove it
+	because overwriting it may fail if the file doesn't have
+	permissions that allow writing.  At the same time, changed the
+	"Using previously fetched" messages to verbose level 5 because
+	there can be a lot of them.
+1999/01/28
+    Changed documentation of logLevel to show that level 5 now has the
+	same thing as verbose level 5 except the percent-done messages.
+    Changed the "Duplicating" messages from level 3 to level 5 because
+        they are work-in-progress messages on temporary files, not actual
+	installation messages (which is what level 3 is for) or even
+	non-per-file progress messages, which is what level 4 has become
+	over the last few days.
+1999/02/02
+    Fixed bug in auto-recognition of pgp5 PGP variant.  It was trying to
+	match up to spaces or tabs, but a "\t" in the regexp wasn't being
+	interpreted as a tab so it stopped at the letter "t" in a path.
+1999/02/09
+    When checking validPaths against symbolic links, also check the link
+	paths with trailing slashes because the links may be for a directory.
+	Also added a comment in the "validatePaths" function that the
+	target of links are required to be in validPaths to prevent a
+	security hole of someone installing a symbolic link to point
+	somewhere outside their validPaths and then creating files below
+	that point.
+1999/02/15
+    If there is ever an error in an attempt to delete an installed file,
+	try renaming it to a unique name in the temporary directory before
+	giving up.  This is to handle the systems (such as HPUX 10) that
+	don't allow removal of running program files but give "text busy"
+	messages instead.
+1999/03/03
+    Added -wait4signature option for creating signed '.nsb' files with
+	a PGP that is not directly invokable, such as on a PC while
+	nsbd is running on a Unix server.  Creates an unsigned package.nsb
+	file and waits for package.nsb.sig to appear and then merges it in.
+    Fixed typo in tcl source when a temporary file cannot be reused because
+	of checksum not matching (bug introduced 1999/01/27).
+1999/03/24
+    Fixed bug in the include parameters sent to rsync: was not properly
+	including all the parent directories of files being transferred by
+	rsync, in the cases where there were multiple subdirectories of a
+	parent directory.
+1999/03/26
+    When '.nsb' files for multiple packages come over rsync from the same
+	server, aggregate their retrieval into a single rsync call when
+	possible.  This optimization occurs under the following conditions:
+	  - the nsbUrl, installTop, and nsbStorePath is identical for
+	    sequential packages
+	  - installation is for a single executableType
+	  - there's only a single version of each package installed (this
+	    restriction could be removed pretty easily if needed)
+	  - the "%P" in the nsbUrl must be in the right-most component
+	    of the url only
+	If these conditions hold, then the saved '.nsb' files retain their
+	original modification times from the server so rsync can tell by
+	timestamp whether or not to consider copying the files.
+    Removed "." from the explicitly included list of directories included
+	when invoking rsync.  This is not required any more in rsync 2.3.0,
+	and it was causing bogus "./" messages to be printed by rsync -v.
+    Removed messages printed for obsolete options -check, -checkPackage,
+	-install, -installPackage, and -verify.
+1999/03/30
+    Removed the restriction against "+" in a package name.  I had previously
+	reserved it to allow for a command line syntax for adding to keyword
+	lists (e.g. paths+file1 as opposed to paths=typea) but I decided I
+	could always use "+=" (e.g. paths+=typea) if I want to allow that
+	in the future.
+1999/03/31
+    Some of the checks for possible aggregation of '.nsb' files were getting
+	in the way of the -fetchAll option; fixed that.
+1999/04/02
+    Added another possible value for "urlPresubstitutions" called "nsbFile"
+	in which only substitutions from the '.nsb' file are assumed to be
+	pre-applied on the server, not any substitutions from the config or
+	registry files.  This is the alternative anticipated in the
+	1998/10/15 ChangeLog entry, and it makes more sense as a value to
+	be specified inside of a '.nsb' file than "all" because "all" only
+	works if the config and registry files are shared between the
+	maintainer and user, and the maintainer can't really know that.
+	"all" makes more sense as a command line option for the user.
+    Fixed bug that prevented -register from working, introduced 1999/03/26.
+1999/04/05
+    Add support for processing all executableTypes of a given package together
+	even if topUrl or multigetUrl contain '%E'.  Nsbd used to require
+	that each executableType be processed separately in that case, so
+	that it could always fetch all changed files together.  Now it
+	will do a separate fetch for each executableType if it needs to.
+    Process the output of the rsync command so it can be sent to log files
+	or to the -register GUI window.  Used to just let it go to stdout.
+	Output from rsync will be logged whenever level 2 or greater is
+	used, and the rsync --verbose option is turned on at level 5.
+1999/04/07
+    Expanded the second condition for aggregation of rsync retrieval of
+	'.nsb' files (from 1999/03/26) to be "installation is for a single
+	installTop" rather than "installation is for a single executableType",
+	to allow for cases when there are related executableTypes stored in
+	the same place (for example, i486-pc-linux-gnu and i586-pc-linux-gnu).
+    Support glob-style wildcards for executableTypes on the command line
+	by expanding them relative to the executableTypes specified in the
+	'.nsb' files.
+1999/04/08
+    When looking for existing installTops to determine which executableTypes
+	listed in the config file are actually supported, use glob expansion
+	in case the executableTypes contained wildcards.  For more info
+	see note from 1998/01/02.
+1999/04/12
+    Fixed bug introduced 1999/03/26 that sometimes resulting in skipping poll/
+	update of some packages with non-rsync nsbUrls from the same server.
+    Added another condition for the aggregation of rsync retrieval of '.nsb'
+	files (from 1999/03/26): 
+	  - the package names are not changed using "distributedPackageName"
+	The reason is that the '.nsb' file will be stored under a different
+	name than the original so rsync won't able to compare the original
+	to the stored file.
+1999/04/13
+    Added simple -signFile option to invoke PGP or GPG to sign a file.  This
+	is useful for scripts that would like to modify '.nsb' files after
+	NSBD creates them but before they are signed.
+1999/04/14
+    Add a "/" to the beginning of generated rsync include patterns to make
+	sure it matches against complete pathnames and not just the end of
+	pathnames.
+1999/04/15
+    Add a 1 minute IO timeout for rsync.  By default it can hang forever.
+1999/04/21
+    If there are "path errors" when creating a '.nsb' file from a '.npd' file
+	and stdin is not a tty, don't prompt to continue, just abort.
+    Fixed bug that caused nsbd to bomb when there were hardlinks in the
+	temporary directory after an abort and restart.  Nsbd only bothers
+	to make those temporary hardlinks when pre- or postUpdateCommands
+	are used, and when files being copied are hardlinked together.
+    Only do a rename of files that can't be deleted (introduced 1999/02/15)
+	when the error message contains "text" and "busy".
+1999/04/22
+    Don't print the long rsync command line when rsync returns an error.
+    Don't let a pathSubs or regSubs on the command line override a config
+	file setting because they are also being applied to the '.nsb'
+	file; those keywords are added together from config and '.nsb'
+	(and registry too) so they were being applied twice.
+    Fixed problem in pushpackage.sh when the "localTop" keyword was set
+	in the '.npd' file and /bin/sh is being used instead of ksh.
+1999/04/25
+    Apply command-line keywords to the old '.nsb' files that loaded for
+	comparison to new '.nsb' files.
+1999/04/26
+    The 1999/04/21 fix regarding files that couldn't be deleted inadvertently
+	caused the error messages that did not contain "text" "busy" to be
+	completely ignored; fixed that.
+    Change default verbose level from 5 to 4. I'm considering dropping it
+	all the way to 2.
+1999/04/28
+    Change the temporary files (under installTmp) to follow the directory
+	structure of the server (under topUrl) rather than the directory
+	structure of where they are ultimately installed on the client
+	(under installTop).  This helps especially when using rsync to
+	transfer, because rsync does not do any substitutions.  Note: this
+	means that it may be difficult for preUpdateCommands to find what
+	files have changed, but I'm not going to worry about it now because
+	as far as I know preUpdateCommands aren't used anywhere.
+    Prevent TK dialogs from being "modal", that is, grabbing the keyboard
+	focus from other windows, so that users can go back and and look
+	at other windows while they are popped up.  I wanted this especially
+	for the last dialog after registering a package, because when the
+	user clicks on that all the windows go away.
+1999/04/30
+    Fix luniqueInsert utility function to work when the list being inserted
+	into does not yet exist.  I ran into this case once during a cleanup
+	operation when rsync was not found.
+    Expand tildes in top level directories before passing them to rsync in
+	case the shell can't do it.
+1999/05/17
+    Add "+" to the characters that are not translated into "%XX" in URLs.
+1999/05/19
+    Stop assuming that temporary files were created with default permissions,
+	because rsync doesn't do that; even without -p, it uses the original
+	file's permissions less the current umask.  Instead, always set the
+	mode of installed files.
+    Canonicalize paths when substitutions change them, to prevent problems
+	with matching old and new paths that had different pathSubs or regSubs
+	applied that resulted in equivalent pathnames but not identical. 
+	For example, path a/b is equivalent to a//b.
+    Added -audit option.  The operation so far is only to compare things
+	known in the stored '.nsb' files to files actually installed, not to
+	look for anything missing or to repair anything.
+1999/05/20
+    When doing substitutions, use only the original unselected executableTypes
+	from the '.nsb' files to find out which paths should be ignored. 
+	There was a bug introduced 1999/04/25 where, when loading old '.nsb'
+	files, the original executableTypes were not being used.  Instead,
+	additional executableTypes were being picked up from the config
+	file (like they always have been) but the problem with those is
+	that they were not being treated as if they could contain wildcards,
+	and executableTypes in the config file are allowed to do that.
+	Rather than expanding those to support wildcards, I decided to not
+	bother with looking those up at all when doing substitutions (and
+	at the same time I made it stop looking up extra types in the
+	registry for that package).
+    Change the error handler to show stack traces on uncaught errors whenever
+	verbose or logLevel are 2 or greater.  It used to be that they would
+	only be shown if the verbose level was 4 or greater.
+    Removed internal duplication that caused command line keyword settings
+	to be applied twice.
+1999/05/21
+    Added "checksig" as the first of the auditOptions, which verify the PGP
+	signatures on stored '.nsb' files.
+    Reduced memory usage of updates by freeing up the information about
+	"paths" from the '.nsb' files after applying substitutions.  This
+	can become especially significant when updating multiple packages
+	because the info about previously loaded packages is cached.
+1999/05/24
+    Added "repair" and "update" auditOptions.  "repair" fixes things that can
+	be done locally (permissions and links) and "update" re-fetches 
+	missing or wrong files from their source.
+1999/05/25
+    Separated out the "checksums" audit option from the default audit, to
+	give the option of skipping the costly calculation of checksums on
+	every file.  The default audit now only checks what can be
+	determined without actually reading the file; that is, mode, type,
+	size, and links.
+1999/05/28
+    Added "extra" and "delete" audit options, to locate extra files and
+	delete them, respectively.  If the packages selected are not "all",
+	first checks to make sure all packages with conflicting validPaths
+	are included, and only looks in directories completely owned by
+	the selected packages.  If "all" packages are selected, looks for
+	all extra files under all installTops.
+    In the check for overlapping validPaths between packages, if there were
+	wildcards in both patterns it was not properly identifying the
+	conflict; for example, "a/*/c" was not seen to match "*/b/*",
+	because it was using the tcl string match function in both
+	directions.  Wrote a new "matchpatterns" function instead which
+	compares each path component separately.  It turned out to be very
+	slow in Tcl so I wrote it in C.
+    Speeded up another very slow piece of the function that determines
+	overlapping validPaths.  It was looking up the installTop for each
+	package and was unnessarily applying substitutions to them.
+1999/06/02
+    When loading an old '.nsb' file, intersect the known executableTypes and
+	versions with those found in the old file before doing substitutions.
+1999/06/07
+    Add '-L' option when invoking rsync to follow symbolic links.
+1999/06/08
+    Made a rather major change in the way executableTypes map together,
+	affecting several different areas:
+        1. Instead of listing all variations on executableTypes directly in
+	    the config file, there is now a new "aliases" config sub-keyword
+	    under which aliases for an executableType are specified.  The
+	    regular list can no longer contain wildcards, but the aliases
+	    can (glob-style "*" or "?").  For example:
+		executableTypes:
+		    solaris
+			aliases: sparc-*-solaris
+	2. Config file pathSubs & regSubs are no longer applied to installTop,
+	    because the whole reason for doing that was to install different
+	    executableTypes into the same place.  Instead, the aliases on
+	    the executableTypes are always applied when there's a '%E' in
+	    the installTop so that the primary type is used.  The registry
+	    database, however, should still contain a specific executable
+	    type known by the package because that value will be used for
+	    updates if the nsbUrl contains %E.
+	3. Changed pathSubs to allow the left hand side to allow glob-style
+	    wildcards.  I thought I needed to do that internally to support
+	    wildcards in the aliases (which turned out not to be true), but
+	    I have run across a couple cases where it might have been handy
+	    in the pathSubs anyway, so I thought it would be worthwhile to
+	    leave it.
+    Fixed bug that caused any use of "requiredPackages" to crash.
+1999/06/10
+    When using gpg, create the signature detached with --detach-sign and
+	put it together into a clearsigned file with a blank line before
+	the signature.  Without that, gpg is not able to generate a signature
+	that can be detached later, so nsbd is unable to verify the signature.
+1999/06/14
+    Prevent calls to "nonfatalerror" function from printing bogus stack
+	traces.
+    When using gpg to add a new key, invoke gpg --edit-keys after importing
+	the key to give the opportunity to sign the key.  Pgp does this by
+	default.
+    Changed nsbd version to 1.3.
+1999/06/22
+    Fixed bug that prevented -signFile from working with gpg.
+1999/07/12
+    The "update" auditOption wasn't working in some circumstances where
+	executableType aliases were in effect.
+1999/07/21
+    At the end of an audit, print a level-3 message with the total number
+	of errors detected.
+1999/07/28
+    Changed some audit error messages from complete paths to relative paths.
+1999/07/29
+    Added a feature for the "delete" auditOption so that it may be followed
+	by a special construct of '%NN' where NN is a maximum percent of
+	total files to delete under each "installTop", in the range of 1
+	through 100.  Default 10.
+1999/07/30
+    Indent each line in a stack trace 2 spaces so they'll look like they're
+	one big message to a parser.
+    Handle non-writable log file more gracefully by always showing original
+	message, and showing original stack trace (double-indented) if the
+	log message was a result of an error.
+1999/08/02
+    Fixed bug in audit with auditOptions update and delete together: when
+	an update failed, the files which were marked as needing reloading
+	would get deleted rather than left alone.
+1999/08/05
+    Catch any possible per-file errors during audit repairs and continue.
+1999/08/25
+    Changed some tcl "lsearch" calls to "lsearch -exact".  This was in
+	particular a problem in the update audit option.
+1999/08/31
+    Also catch per-file errors during audit deletes and continue.
+1999/10/01
+    Have -preview show which files would be backed up.
+1999/10/22
+    Fixed bug introduced 1999/04/30 which caused tk_dialog to always return
+	an empty string.  This prevented the selected answers from being 
+	returned from question dialogs, for example the one which asks whether
+	to proceed or cancel when attempting to register over an existing
+	package; it would always proceed even if you pressed cancel.
+    When incorrect mode discovered during an audit, now show the old mode in
+	addition to the new.
+1999/11/09
+    When a symlink replaces a directory, skip separately deleting any files
+	that may have needed to be deleted below the directory because they
+	may now be pointing to different files.
+2000/01/11
+    Increase the rsync timeout from 60 seconds to 120 seconds.  The limit
+	has been frequently reached on a slow HPUX 10.20 machine.
+2000/02/24
+    Change pushpackage.sh to prevent the shell from stripping leading blanks.
+2000/02/29
+    Integrate with Jan Nijtman's "wrap" package (version 0.3 with patches
+	that should go into version 0.4) to build with tcl/tk 8.3.0 without
+	Jan's plus patches.
+2000/03/03
+    If a directory is not readable when auditing for extra files, print error
+	and continue rather than halting.
+2000/03/20
+    Prevent bombing out on missing nrdPackagesCache variable if registry
+	file is not found.
+2000/03/23
+    Put in optimizations in pathSubs and regSubs handling to avoid calls to
+	Tcl's regsub and regexp functions as much as possible because
+	Tcl 8.3.0 is especially slow/memory intensive with those.  Put back
+	some logic taken out 1999/06/08, using it only when there are no
+	wildcards.
+    Changed documentation wherever it talks about glob-style wildcards to
+	include "[]" in addition to "*" and "?".  No code changes were needed
+	for that.
+2000/04/03
+    Changed configure to accept the $TCLSH environment variable to specify
+	a different tclsh to use, to look first for tclConfig$TCL_VERSION.sh
+	before the default tclConfig.sh, and to not try to use "wrap" if
+	using a tcl version earlier than 8.2.  I did all this because on my
+	systems both tcl8.0 and tcl8.3 are installed under the same prefix,
+	and tcl8.3 is significantly slower and it requires that I use a
+	heavily modified "wrap" package for standalone executables so I
+	want to continue to release nsbd binaries based on tcl8.0 for a
+	while.
+2000/04/06
+    Add '.' to the set of characters that may be used in a package name.
+2000/04/26
+    Apply "excludePaths" in a .npd file also when a path does not exist.  
+	ExcludePaths can now be used, for example, to explicitly exclude 
+	files for a particular executableType even when a '%E' specifies
+	it.  For example, if paths includes "prog.%E" and excludePaths
+	has "prog.solaris" when executableTypes is set to "sgi,solaris",
+	only prog.sgi will be looked for.
+2000/05/04
+    Remove the two subkeywords to paths (linkTo and hardLinkTo) that used
+	to get put into the files passed as input to preUpdateCommands and
+	postUpdateCommands.  The other subkeywords (length, sha1, md5, and
+	mode) had already been removed and these two aren't very useful and
+	just get in the way of simple scripts that are trying to do things
+	with all the paths.
+2000/05/08
+    Added "pathGroups" registry keyword which is similar to "pathPerms" and
+	allows setting the group on any set of paths within a package,
+	assuming the user id that nsbd is running on has the right to
+	change files to that group.  Supported during both installation and
+	audit.
+2000/05/30
+    When nsbdpath is set to "" on the command line, do not reference the
+	files normally found in the ~/.nsbd directory (config.ncf,
+	registry.nrd, and updates.log).
+2000/07/11
+    Removed references to "web-based" in the description of NSBD because
+	the recommended transport mechanism is now rsync.
+2000/07/12
+    Fixed a bug when replacing a symlink that points nowhere with something
+	new; tcl's "file exists" reports that as non-existent so nsbd didn't
+	think it had to delete it.  Instead I wrote a function "robustFileType"
+	that will always return the type of an existing file or an empty
+	string; it's more convenient than tcl's "file type" because that
+	raises an error if a file is not existent.
+2000/07/13
+    When installing gpg keys from under -register, initialize temporary
+	keyring file (to empty) before passing it to gpg because otherwise
+	gpg complains about it being missing.  Also support installing
+	multiple keys at a time with the same user id into gpg because 
+	gpg 1.0.1c at least only takes the first match with --export and
+	--edit-key.
+2000/08/28
+    When creating a .nsb file, warn the user when following a symbolic link
+	due to it being outside of the top level directory, as that is 
+	often done by mistake.  Prints a "Note" at verbose level 4.
+2000/09/20
+    When deciding whether a file needs to be re-installed because its mode
+	has changed, compare the final complete permissions instead of just
+	the symbolic "rwx" mode.
+    Include the PGP user id of the signer of the package in the "maintainers"
+	keyword in the file that is past to preInstallCommands and
+	postInstallCommands.
+2000/09/26
+    Remove the "installTop" from the beginning of audit errors reported on
+	stored ".nsb" files.  This allows the audit errors to be grouped
+	together when logs are analyzed across machines with different
+	installTops.
+2000/10/25
+    Combine error output from rsync into the "error from rsync" message
+	rather than putting it out at a different verbose level.
+2000/12/04
+    Added the "breloc" standalone binary relocation program to the nsbd
+	package.  "breloc" does binary edits on files to change compiled-in
+	"prefix"es, padding with extra slashes to make up for differences
+	in length of the prefixes.  In order to be most effective, the
+	packages should be configured with a prefix that has a lot of extra
+	slashes at the end of it; I suggest a total of 64 bytes for the
+	real prefix plus the extra slashes for maximum flexibility.  Also
+	added the "relocTop" keyword to nsbd's registry database, config
+	file, and command line so that nsbd can do relocation and still
+	calculate the correct checksums.  When the "relocTop" keyword is
+	set and "installTop" is set in the '.nsb' file, nsbd invokes the
+	"breloc" program on every file in the package to change every
+	occurrence of installTop's value with relocTop's value.  Future
+	note: should probably someday add a "relocPaths" '.nsb' file
+	keyword so the package maintainer can specify wildcards of paths of
+	files that should be relocated (default "*"), so the rest can be
+	left alone.
+    Also added a "Relocating" progress message while relocating each file
+	(and at the same time calculating the checksum) when in rsync
+	mode.  Thought about putting a "Verifying" message for each file
+	in rsync mode that are just having their checksum calculated and
+	not being relocated, but decided against it for now.
+2000/12/21
+    Fixed bug with -remove when a single executableType was registered
+	with an installTop without %E in it; it used to still try to
+	work with all executableTypes and then complain that they all
+        were installed at the same place.
+    Added a "Relocation top" -register field right after the "Install top"
+	field.  It only shows up if the maintainer had originally specified
+	an installTop, which is required in order to do relocation.
+    Added breloc.1 man page.
+2000/12/26
+    Changed to read output of rsync command in non-blocking mode with an event
+	handler to permit -register window redrawing during rsync.
+    Changed NSBD version to 1.4.
+2001/01/02
+    Fixed bug introduced a month ago that caused a crash when not using
+	rsync or multiget to pull changes (that is, when topUrl does not
+	start with rsync:// and multigetUrl is not set).
+20001/01/12
+    Implemented three new options:
+	-askreason which, when creating a '.nsb' file from a '.npd' file,
+	    will prompt the user for a reason for the update and put it
+	    into the "releaseNote" keyword.
+	-getPackagePaths which prints out all the installed paths from the
+	    '.nsb' files of the given package names.
+	-getPackageRegistryKey which prints to stdout the value of the
+	    key in the registry for the given package and key.
+2001/01/23
+    Fixed bug that prevented a comma-list in $NO_PROXY or $no_proxy from
+	being split into separate domain names.
+2001/01/29
+    Implemented two new options
+	-getPathPackages which accepts complete paths and prints to stdout
+	    the names of packages that have installed paths that match one
+	    of the paths.  If there's more than one package that has
+	    registered wildcard validPaths that could contain the same path,
+	    the option looks into the '.nsb' files to find out which of the
+	    packages has the installed path.
+	-getPathRegisteredPackages which is just like -getPathPackages except
+	    it lists all packages that have validPaths that match one of the
+	    paths; this option never looks into the '.nsb' files.
+    Originally I had wanted these options to accept wildcards instead of
+	exact paths but I discovered that it was too difficult to have an
+	algorithm that can match any glob expression against any other
+	glob expression.  For example, matching "a/*/c" against "*/b/*" is
+	especially difficult.  So I decided that if wildcards are desired
+	they'll have to be expanded outside of NSBD by expanding the
+	wildcards against existing files (for example with 'find' or 'locate')
+	before they're passed to NSBD.
+2001/02/02
+    Fix -askreason option to work with vi (had only been tested with vim).
+	Also have it trim trailing whitespace on each line because that
+	seems to cause gpg to generate bad signatures.
+2001/02/15
+    Ran into a case where somebody's shell startup script was printing
+	something to stderr which caused the invocation of gpg to sign
+	a file to return an error with new clue why.  Changed to print
+	any error message returned from the "catch" if it isn't the ordinary
+	"child process exited abnormally".  There are probably other places
+	this should be done too but I'm not going to change them today.
+2001/04/02
+    Fixed bug that prevented "paths" in a .npd file from working if they
+	were symlinks that pointed nowhere.
+2001/04/03
+    When checking for extra files during an audit and a file is excluded
+	due to a pathSubs or regSubs editting it to the empty string, mark
+	parent directories of the file as "known" so they won't be considered
+	to be extra.
+2001/05/02
+    Enhanced breloc to allow the extra slashes to be anywhere within the
+	"frompath" in the file as well as after it.  This is useful for
+	separately relocating different subdirectories under a compiled-in
+	prefix.  Unfortunately, such a replacement is not reversible which
+	means that nsbd's audits won't work with it, so also added a "-r"
+	option to breloc which causes it to only do reversible replacements,
+	essentially reverting it back to its former functionality of requiring
+	the extra slashes to be after the prefix (not exactly -- more
+	details in the breloc.1 man page).  Also added a nsbd "breloc"
+	config variable to allow the user to set the location and options
+	for breloc, and the variable defaults to "breloc -r".
+2001/05/11
+    Indent releaseNotes when they're printed out.
+2001/05/31
+    Added "-c" option to breloc to collapse multiple slashes into one.  Only
+	useful when relocating text files, as it shrinks the size of the
+	file.  It is not reversible so nsbd doesn't use the option.
+2001/07/03
+    Fixed bug in nsbd's use of breloc after an rsync, which sometimes caused
+	it to make an extra copy of the file even though it wasn't relocating.
+2001/07/24
+    Fixed bug that prevented "paths" in a .npd file from working if they
+	were symlinks that pointed nowhere.  This was supposed to have been
+	fixed 2001/04/02 but somehow the change never got in.  This time also
+	fixed place in audit where the same problem could potentially occur
+	and had both places call a new function "robustGlob".  The problem
+	was that tcl's glob function only recognizes the hanging symlinks
+	when included in a wildcard.
+2001/08/31
+    Skip over the "[uncertain]" prefix on a signature's user id that's coming
+	in gpg 1.0.7 when a signature's key isn't completely trusted.
+2001/09/10
+    Fix a long-standing problem that caused deletes of files in a package
+	that included parent directories in the "paths" list to read in all
+	the '.nsb' files for all other packages that contained one of the
+	same parent directories, which in many cases included a lot of very
+	large packages.   Parent directories of valid paths are always
+	allowed in "paths", and that's where the problem came in because
+	the optimization that was in place had assumed that it could skip
+	all the files that were below given parent directories.  The fix is
+	to ignore all directories when looking for potential conflicts
+	between packages, and instead optimize the comparisons in
+	findOverlappingPackages to use an associative array lookup whenever
+	it compares non-wildcards rather than doing a linear search.
+2001/09/12
+    Optimize the inserting of files similarly to the way removal of files
+	was done two days ago: use only the new files in the list when
+	looking for potententially conflicting packages, rather than all
+	of the validPaths of the package.
+    Change NSBD version number to 1.5.
+2001/09/18
+    Converted to using D. Richard Hipp's mktclapp to make standalone
+	binaries as opposed to Jan Nijtman's plus patches with tcl2c or
+	his tclwrap.  Executable sizes increase about 20% over tclwrap,
+	but Jan has stopped supporting either of his mechanisms.  The
+	mktclapp source is included in the nsbd source so it doesn't 
+	become another dependency that has to be downloaded if somebody
+	else wants to build nsbd.
+    Added a configure option --with-tcl2c to still use the tcl2c and plus
+	patch mechanism.  This is only temporary and will eventually go
+	away.  I added it because I've got a machine type that's very very
+	old to support that can't handle the long strings of mktclapp,
+	but I won't need to support that machine type much longer.
+    Completely removed use of tclwrap.
+    Confirmed that NSBD works with tcl/tk 8.3.3, but it is still significantly
+	slower, at least on large audit operations, than tcl 8.0.5.
+2001/09/21
+    In order to support Mac OSX, added AC_HEADER_STDC check in configure.in 
+	and use stdlib.h instead of malloc.h in nsbdInit.c if the check found
+	stdlib.h to be available.
+2001/10/18
+    Minor change to support compiling under cygwin: do a "#include <errno.h>"
+	instead of an "extern int errno" in nsbdInit.c.
+2001/10/26
+    Added -cvsExclude option to automatically ignore files when creating
+	a '.nsb' file from a '.npd' file in the same way that CVS and 
+	rsync --cvs-exclude do.
+    Also, verbose=7 now prints every file name when creating a '.nsb'
+	file from a '.npd' file.
+2001/11/14
+    Added functionality so that if .cvsignore files are excluded by
+	"excludePaths", then they will not be read by -cvsExclude
+	for additional patterns to exclude.
+2001/12/20
+    In order to support a '.exe' extension for cygwin executables, added
+	a %X substitution to the '.npd' "paths" keyword and to the '.nrd'
+	"validPaths" keyword.  The value of %X is determined by a new
+	subkeyword under "executableTypes" called "extension" and specified
+	in a '.ncf' file.  In the '.npd' "paths" keyword, it may only be
+	used in conjunction with a %E substitution so nsbd can figure out
+	which executableType is affected.  It may be nice to support %X in
+	other places too such as pathSubs and regSubs, but so far it seems
+	those kinds of cases can be handled by adding an extra substitution
+	that includes explicitly includes the '.exe'.
+2001/12/21
+    Make Makefile.in use @EXEEXT@ where needed to build on cygwin.  It is
+	set to '.exe' on cygwin, and it's needed by some programs such as
+	'rm' and 'ln' but not all programs such as make itself. 
+2002/01/04
+    Cygwin returns "permission denied" instead of "text busy" when attempting
+	to delete an executable that is in use, so recognize that different
+	error message in the robustDelete function.  Unfortunately if it is
+	truly a permission denied error the rename will also fail, so if
+	both operations fail with permission denied only report the delete
+	failure.
+2002/01/08
+    Fix the implementation of %X in validPaths, it had 2 bugs and hadn't
+	been tested.
+2002/01/09
+    Changed version to 1.6.
+2002/01/16
+    Removed default LDFLAGS of -s because it doesn't work on Mac OSX (darwin).
+	Instead, added INSTALL_FLAGS to pass -s to install script.
+2002/01/18
+    Fix -getPathPackages and -getPathRegisteredPackages to work when validPaths
+	have %X in them.  For maximum flexibility, accepts a match for any
+	defined extension and not just the one for the current executableType.
+2002/01/13
+    Expanded the breloc -c option to work on binary files, assuming they're
+	like C program binaries with null-terminated strings.  The rest of
+	the strings after the matching "frompath" are shifted left over the
+	spare extra slashes, and then an extra padding string of slashes
+	is put in to fill the gap.  This mode is automatically selected
+	with -c if a file contains a null byte, otherwise it goes back to
+	the previous behavior of assuming it is a text file and shrinking
+	the file.  This operation can't yet be reversed, but I could make
+	it reversible if the "topath" on the reversed operation contains
+	exactly the same number of padding slashes as were originally
+	compiled into the file.  I plan to implement that another day.
+	Changed breloc version number to 1.3.
+2002/07/10
+    Fixed bug in matching of executableTypes that have a '.' in them
+	when using %E in regSubs and pathSubs in some circumstances.
+	Internally pathSubs are sometimes converted to regular expressions
+	and regSubs are sometimes converted to exact matches, and nsbd
+	wasn't properly controlling when a backslash needed to be inserted
+	before the '.' to avoid being interpreted as a regular expression
+	single-character wildcard.
+2002/08/19
+    Fixed bug where nsbd wasn't using basic configuration values such as
+	"pgp" during the same run in which it prompts for them, when
+	there's no config file; it was only writing the values out to the
+	config file but not using them until the next run.
+2002/09/05
+    Also include string.h in nsbdInit.c whenever STDC_HEADERS is defined by
+	the AC_HEADER_STDC check in configure.  This avoids warnings
+	connected with the calls to strpbrk().
+2002/10/09
+    Changed the -cvsExclude option to only apply the patterns in a
+	.cvsignore file to the directory the file is in.  There's still
+	one exception: if a pattern in a .cvsignore file has a '*' in it,
+	the wildcard is allowed to pass through into subdirectories, so
+	if somebody adds something like "*.out" then all .out files in
+	subdirectories will also be excluded.  To stop that behavior would
+	be difficult to implement, and the value isn't clear.
+2003/01/29
+    Support $(prefix) and $(exec_prefix) Make variables.
+    Support @EXEEXT@ for "make install".
+2003/02/04
+    Make exptools@lucent.com another maintainer of nsbd.
+2003/02/05
+    Change the preUpdateCommands and postUpdateCommands to display a 
+	the command being executed at verbose level 4.  Previously
+	they were displaying the message at level 3 only if the command
+	wasn't preceded with an '@'; now it uses level 4 with or without
+	the '@'.
+2003/02/10
+    Cleaned out tclInit.tcl which was only used for tclwrap.
+2003/02/12
+    Added original source for http.tcl and http.n under similar names with
+	a ".dist" extension so it is easy to see what modifications were
+	made to the standard tcl http functions.
+    Cleaned out cgi/multiget.sh and cgi/multiget.tcl because they have been
+	replaced by the nsbd -multigetFiles option.  Moved the documentation
+	in cgi/README into the beginning comments in each script in the
+	cgi directory and deleted the cgi/README file.
+2003/02/13
+    Changed the places that refer to Dave Dykstra as the primary maintainer
+	to the Lucent Central Exptools Administrator <exptools@lucent.com>.
+    Updated comments at the beginning of many source files to give a more
+	complete description of what the purpose of each file is.
+    Updated Copyright notices to include 2003.
+2003/02/14
+    Improved comments in nsbfile.tcl.
+    Added the -s option.  This changes the behavior when only some
+    of the substitutions can be made due to lack of padding.  If -s
+    is not used, this is not an error and substitutions are performed
+    where possible.  If -s is specified, and stdin is used, an
+    error will be returned, but changes are still made where possible.
+    If files are specified, they will not be changed unless all 
+    substitutions are successful.
+2003/02/17
+    Changed the error message returned for padding problems to make clear
+    whether it is a warning or an error.
+    Improved the comments at the top of audit.tcl.
+2003/02/18
+    Added the -dumpRegistry and -dumpConfig files to support merging
+    of multiple registry or config files.
+2003/04/25
+    When a '.nsb' file does not contain any executableType selected by the
+    user on the command line, it used to give a misleading warning about
+    the executableTypes not being in the configuration file.  Changed that
+    to instead be an error saying the package doesn't contain the type(s).
+2003/07/23
+    excludeCvs now excludes *.olb and *.exe.  The problem was that these
+    file were getting include in nsb files built with -cvsExclude, but 
+    then they don't get imported by CVS.
+2003/09/03
+    Fixes for compatibility with newer gpg versions.  Invoke gpg with
+    --no-secmem-warning to eliminate warning messages that confuse nsbd.
+    Have nsbd ignore messages about file permissions.  (These could
+    have been suppressed with --no-permission-warning, but that's not
+    supported by older versions of gpg)
+2003/09/25
+    Added pathPreserveMtimes and preserves keywords.  Enables preserving
+    modification times on selected files.
+2004/05/10
+    breloc was failing on cygwin - can't rename something on top of 
+    a deleted file unless the deleted file has been closed.
+2004/10/21
+    Due to a need to support packages that have directory names containing
+    curly braces, this restriction has been dropped from nsbd.
+2006/01/30
+    Add support for getwweupdates to use HTTP.
+2006/05/19
+    Small changed needed now that distribution server is newer than build
+    machine.

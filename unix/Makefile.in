@@ -1,0 +1,257 @@
+# 
+# Makefile for nsbd, Not-So-Bad Distribution
+# Written by Dave Dykstra <dwd@bell-labs.com>
+#
+# Copyright (C) 1997-2003 by Dave Dykstra and Lucent Technologies
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#  
+# If those terms are not sufficient for you, contact the author to
+# discuss the possibility of an alternate license.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+prefix =	@prefix@
+exec_prefix =	@exec_prefix@
+AWK =		@AWK@
+INSTALL =	./install-sh -c
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+# set INSTALL_FLAGS to nothing to not strip when installing
+INSTALL_FLAGS =	-s
+INSTALL_DATA =	@INSTALL_DATA@
+DEFS =		@DEFS@
+TCLSH =		@TCLSH@
+TCL2C = 	@TCL2C@
+TCL_CC =	@TCL_CC@
+TCL_CFLAGS =	@TCL_CFLAGS@
+TCL_DEFS =	@TCL_DEFS@
+CONF_CFLAGS =	@CONF_CFLAGS@
+TCL_PREFIX =	@TCL_PREFIX@
+TCL_LIB_SPEC =	@TCL_LIB_SPEC@
+TK_LIB_SPEC =	@TK_LIB_SPEC@
+TCL_LD_SEARCH_FLAGS = @TCL_LD_SEARCH_FLAGS@
+CONF_LD_SEARCH_FLAGS = @CONF_LD_SEARCH_FLAGS@
+TCL_UNSHARED_LIB_SPEC =	@TCL_UNSHARED_LIB_SPEC@
+TK_UNSHARED_LIB_SPEC =	@TK_UNSHARED_LIB_SPEC@
+TCL_LIBS =	@TCL_LIBS@
+TK_LIBS	 =	@TK_LIBS@
+TCL_VERSION =	@TCL_VERSION@
+TK_VERSION =	@TK_VERSION@
+TCL_LIBFILES = 	@TCL_LIBFILES@
+TK_LIBFILES = 	@TK_LIBFILES@
+
+CC =		$(TCL_CC)
+CFLAGS =	$(TCL_CFLAGS) $(CONF_CFLAGS) -I$(TCL_PREFIX)/include -I../generic $(DEFS)
+LIB_RUNTIME_DIR = $(TCL_PREFIX)/lib
+LDFLAGS =
+SA_LDFLAGS = 	$(LDFLAGS) \
+		$(TK_UNSHARED_LIB_SPEC) \
+		$(TCL_UNSHARED_LIB_SPEC) \
+		$(TK_LIBS) \
+		$(TCL_LIBS)
+
+SO_LDFLAGS = $(LDFLAGS) \
+		$(TCL_LD_SEARCH_FLAGS) \
+		$(CONF_LD_SEARCH_FLAGS) \
+		$(TK_LIB_SPEC) \
+		$(TCL_LIB_SPEC) \
+		$(TK_LIBS) \
+		$(TCL_LIBS)
+
+NOX_LDFLAGS = $(LDFLAGS) \
+		$(TCL_UNSHARED_LIB_SPEC) \
+		$(TCL_LIBS)
+
+# set PROG = nsbdSO to build & install shared-object version
+PROG = 		nsbd
+# order is important in TCLMODS
+TCLMODS =  	nsbdVersion.tcl \
+		license.tcl \
+		../generic/main.tcl \
+		../generic/options.tcl \
+		../generic/nsbdformat.tcl \
+		../generic/tables.tcl \
+		../generic/nsbfile.tcl \
+		../generic/audit.tcl \
+		../generic/http.tcl \
+		../generic/url.tcl \
+		../generic/util.tcl \
+		../generic/pgp.tcl \
+		../generic/registry.tcl \
+		../generic/debug.tcl
+CMODS =		tclmd5.o md5.o \
+		tclsha1.o sha1.o
+LIBFILES =	../cgi/linknsb.sh \
+		../cgi/posttonsbd.sh \
+		../cgi/pushpackage.sh
+
+all: $(PROG) breloc
+
+breloc: breloc.c
+	$(CC) $(CFLAGS) $(TCL_DEFS) -o breloc breloc.c $(LDFLAGS)
+
+nsbd: @DEFAULT_NSBD@
+	rm -f nsbd@EXEEXT@
+	ln @DEFAULT_NSBD@@EXEEXT@ nsbd@EXEEXT@
+
+nsbdSO: @DEFAULT_NSBD@SO
+	rm -f nsbdSO@EXEEXT@
+	ln @DEFAULT_NSBD@SO@EXEEXT@ nsbdSO@EXEEXT@
+
+nsbdNoX: @DEFAULT_NSBD@NoX
+	rm -f nsbdNoX@EXEEXT@
+	ln @DEFAULT_NSBD@NoX@EXEEXT@ nsbdNoX@EXEEXT@
+
+###### mktclapp section ####
+
+MKTCLAPP = ./mktclapp
+
+mktclapp: mktclapp.c
+	$(CC) $(CFLAGS) -o mktclapp mktclapp.c $(LDFLAGS)
+
+nsbdApp: nsbdApp.o $(CMODS) nsbdInitApp.o tclIndex
+	$(CC) -o nsbdApp nsbdApp.o $(CMODS) nsbdInitApp.o $(CFLAGS) $(SA_LDFLAGS) $(CTYPE_FIX)
+
+nsbdApp.o: $(MKTCLAPP) nsbdapp.tcl $(TCLMODS) tclIndex $(CMODS) nsbdInit.c
+# tclIndex has to be -dont-strip-tcl because the comment is examined
+	$(MKTCLAPP) -standalone -min-override -notk -dont-strip-tcl tclIndex \
+	    -strip-tcl $(TCLMODS) nsbdapp.tcl \
+	    $(TCL_LIBFILES) $(TK_LIBFILES) \
+	    $(CMODS) nsbdInit.c -main-script nsbdapp.tcl | \
+	    sed "s/Tcl_Init(/nsbd_init(/g" >nsbdApp.c
+	$(CC) -c $(CFLAGS) nsbdApp.c
+	#rm -f nsbdApp.c
+
+nsbdInitApp.o: nsbdInit.c
+	cp nsbdInit.c nsbdInitApp.c
+	$(CC) -c nsbdInitApp.c $(CFLAGS)
+
+nsbdAppSO: nsbdAppSO.o $(CMODS) nsbdInitApp.o tclIndex
+	$(CC) -o nsbdAppSO nsbdAppSO.o $(CMODS) nsbdInitApp.o $(CFLAGS) $(SO_LDFLAGS)
+
+nsbdAppSO.o: $(MKTCLAPP) nsbdapp.tcl $(TCLMODS) tclIndex $(CMODS) nsbdInit.c
+	$(MKTCLAPP) -min-override -notk -dont-strip-tcl tclIndex \
+	    -strip-tcl $(TCLMODS) nsbdapp.tcl \
+	    $(CMODS) nsbdInit.c -main-script nsbdapp.tcl | \
+	    sed "s/Tcl_Init(/nsbd_init(/g" >nsbdAppSO.c
+	$(CC) -c $(CFLAGS) nsbdAppSO.c
+	rm -f nsbdAppSO.c
+
+
+nsbdAppNoX: nsbdAppNoX.o $(CMODS) nsbdInitANoX.o tclIndex
+	$(CC) -o nsbdAppNoX nsbdAppNoX.o $(CMODS) nsbdInitANoX.o $(NOX_LDFLAGS)
+
+nsbdAppNoX.o: $(MKTCLAPP) nsbdapp.tcl $(TCLMODS) tclIndex $(CMODS) nsbdInit.c
+# tclIndex has to be -dont-strip-tcl because the comment is examined
+	$(MKTCLAPP) -standalone -min-override -notk -dont-strip-tcl tclIndex \
+	    -strip-tcl $(TCLMODS) nsbdapp.tcl \
+	    $(TCL_LIBFILES) \
+	    $(CMODS) nsbdInit.c -main-script nsbdapp.tcl | \
+	    sed "s/Tcl_Init(/nsbd_init(/g" >nsbdAppNoX.c
+	$(CC) -c $(CFLAGS) nsbdAppNoX.c
+	rm -f nsbdAppNoX.c
+
+nsbdInitANoX.o: nsbdInit.c
+	cp nsbdInit.c nsbdInitANoX.c
+	$(CC) -c nsbdInitANoX.c $(CFLAGS) -DWITHOUT_TK
+	rm nsbdInitANoX.c
+
+
+###### TCL2C section ####
+.SUFFIXES: .tcl
+.tcl.c:
+	$(TCL2C) -o $@ $<
+
+nsbdT2c: nsbdT2c.o $(CMODS) nsbdInit2SA.o tclIndex
+	$(CC) -o nsbdT2c nsbdT2c.o $(CMODS) nsbdInit2SA.o $(CFLAGS) $(SA_LDFLAGS)
+
+nsbdT2c.o: nsbd.tcl $(TCLMODS)
+	$(TCL2C) $(TCLMODS) nsbd.tcl -tcl | \
+	    sed "s/Tcl_Init/nsbd_init/g" >nsbdT2c.c
+	$(CC) -c $(CFLAGS) nsbdT2c.c
+	rm nsbdT2c.c
+
+nsbdInit2SA.o: nsbdInit.c
+	cp nsbdInit.c nsbdInit2SA.c
+	$(CC) -c nsbdInit2SA.c $(CFLAGS) -DSTANDALONE
+	rm nsbdInit2SA.c
+
+nsbdT2cSO: nsbdT2c.o $(CMODS) nsbdInit2SO.o tclIndex
+	$(CC) -o nsbdT2cSO nsbdT2c.o $(CMODS) nsbdInit2SO.o $(SO_LDFLAGS)
+
+nsbdInit2SO.o: nsbdInit.c
+	cp nsbdInit.c nsbdInit2SO.c
+	$(CC) -c nsbdInit2SO.c $(CFLAGS)
+	rm nsbdInit2SO.c
+
+nsbdT2cNoX: nsbdT2c.o $(CMODS) nsbdInit2NoX.o tclIndex
+	$(CC) -o nsbdT2cNoX nsbdT2c.o $(CMODS) nsbdInit2NoX.o $(NOX_LDFLAGS)
+
+nsbdInit2NoX.o: nsbdInit.c
+	cp nsbdInit.c nsbdInit2NoX.c
+	$(CC) -c nsbdInit2NoX.c $(CFLAGS) -DSTANDALONE -DWITHOUT_TK
+	rm nsbdInit2NoX.c
+
+#####
+
+license.tcl: lic2tcl.awk ../COPYING
+	$(AWK) -f lic2tcl.awk ../COPYING >license.tcl
+
+quietTclIndex: tclIndex
+
+tclIndex: $(TCLMODS) nsbdTclshLib.tcl Makefile
+	echo "auto_mkindex . $(TCLMODS) nsbdTclshLib.tcl" | $(TCLSH)
+
+tclmd5.o : ../generic/tclmd5.c ../generic/md5.h
+	$(CC) -c $(CFLAGS) -DVERSION=\"0.2\" ../generic/tclmd5.c
+md5.o : ../generic/md5.c ../generic/md5.h
+	$(CC) -c $(CFLAGS) ../generic/md5.c
+
+tclsha1.o : ../generic/tclsha1.c ../generic/sha1.h
+	$(CC) -c $(CFLAGS) -DVERSION=\"0.1\" ../generic/tclsha1.c
+sha1.o : ../generic/sha1.c ../generic/sha1.h
+	$(CC) -c $(CFLAGS) ../generic/sha1.c
+
+manpage: nsbd.1
+
+nsbd.1: always
+	echo "lappend auto_path .;makeNsbdMan nsbd.1" | $(TCLSH)
+
+install: $(PROG)@EXEEXT@ breloc@EXEEXT@ nsbd.1 install-sh always
+	for i in $(prefix) $(exec_prefix); do \
+	    if [ ! -d $$i ]; then mkdir $$i; fi; \
+	done
+	for i in lib lib/nsbd man man/man1; do \
+	    if [ ! -d $(prefix)/$$i ]; then mkdir $(prefix)/$$i; fi; \
+	done
+	for i in bin; do \
+	    if [ ! -d $(exec_prefix)/$$i ]; then mkdir $(exec_prefix)/$$i; fi; \
+	done
+	$(INSTALL_PROGRAM) $(INSTALL_FLAGS) -t='s/$(PROG)$$/nsbd/' $(PROG)@EXEEXT@ $(exec_prefix)/bin
+	$(INSTALL_PROGRAM) $(INSTALL_FLAGS) breloc@EXEEXT@ $(exec_prefix)/bin
+	$(INSTALL_DATA) nsbd.1 $(prefix)/man/man1
+	$(INSTALL_DATA) breloc.1 $(prefix)/man/man1
+	set -x; for i in $(LIBFILES); do \
+	    case $$i in \
+		*.sh|*.tcl) $(INSTALL_PROGRAM) $$i $(prefix)/lib/nsbd;; \
+		*)	    $(INSTALL_DATA) $$i $(prefix)/lib/nsbd;; \
+	    esac; \
+	done
+
+always:
+
+clean:
+	rm -f *.o tclIndex nsbd@EXEEXT@ nsbdSO* nsbdNoX* nsbdApp* nsbdT2c* \
+		breloc@EXEEXT@ mktclapp@EXEEXT@ \
+		nsbd.1 nsbdInit?*.c *.nsb license.tcl
+
+distclean: clean
+	rm -f Makefile config.*
+
+clobber: distclean

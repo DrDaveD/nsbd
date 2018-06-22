@@ -1,0 +1,8 @@
+# script for immediately testing changed source on unix, without running "make"
+#
+TCLLIBPATH=../../tcllibs # has to contain Tclmd5 and Tclsha1 loadable libraries
+export TCLLIBPATH
+/opt/exp/tcl/bin/wish8.0 ${1+"$@"} <<'!EOF!'
+set auto_path [concat {../unix} $auto_path]
+exit [eval nsbd $argv]
+!EOF!
